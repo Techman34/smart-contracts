@@ -5,8 +5,12 @@ import "./utils/Withdrawable3.sol";
 
 
 contract SanityRatesMaxGasPrice is Withdrawable3, Utils5 {
-    mapping(address => uint256) public tokenRate;
-    mapping(address => uint256) public reasonableDiffInBps;
+    struct SanityData {
+        uint224 tokenRate;
+        uint32 reasonableDiffInBps;
+    }
+
+    mapping(address => SanityData) public sanityData;
     uint256 public maxGasPriceWei = 50 * 1000 * 1000 * 1000; // 50 gwei
 
     event SanityMaxGasPriceSet(uint256 maxGasPrice);
@@ -20,7 +24,7 @@ contract SanityRatesMaxGasPrice is Withdrawable3, Utils5 {
         require(srcs.length == diff.length, "srcs,diff length mismatch");
         for (uint256 i = 0; i < srcs.length; i++) {
             require(diff[i] <= 100 * 100, "Diff > 10000 BPS");
-            reasonableDiffInBps[address(srcs[i])] = diff[i];
+            sanityData[address(srcs[i])].reasonableDiffInBps = uint32(diff[i]);
         }
     }
 
@@ -30,32 +34,30 @@ contract SanityRatesMaxGasPrice is Withdrawable3, Utils5 {
         emit SanityMaxGasPriceSet(maxGasPriceWei);
     }
 
-    /// @dev You can disable a token by setting the token's sanity rate to 0
     function setSanityRates(IERC20[] memory srcs, uint256[] memory rates) public onlyOperator {
         require(srcs.length == rates.length, "srcs,rates length mismatch");
 
         for (uint256 i = 0; i < srcs.length; i++) {
             require(rates[i] <= MAX_RATE, "rate > maxRate (10**25)");
-            tokenRate[address(srcs[i])] = rates[i];
+            sanityData[address(srcs[i])].tokenRate = uint224(rates[i]);
         }
     }
 
     function getSanityRate(IERC20 src, IERC20 dest) public view returns (uint256) {
+        SanityData memory data;
+
         if (src != ETH_TOKEN_ADDRESS && dest != ETH_TOKEN_ADDRESS) return 0;
         if (tx.gasprice > maxGasPriceWei) return 0;
 
         uint256 rate;
-        address token;
         if (src == ETH_TOKEN_ADDRESS) {
-            rate = tokenRate[address(dest)] > 0
-                ? (PRECISION * PRECISION) / tokenRate[address(dest)]
-                : 0;
-            token = address(dest);
+            data = sanityData[address(dest)];
+            rate = (PRECISION * PRECISION) / data.tokenRate;
         } else {
-            rate = tokenRate[address(src)];
-            token = address(src);
+            data = sanityData[address(src)];
+            rate = data.tokenRate;
         }
 
-        return (rate * (10000 + reasonableDiffInBps[token])) / 10000;
+        return (rate * (10000 + data.reasonableDiffInBps)) / 10000;
     }
 }
