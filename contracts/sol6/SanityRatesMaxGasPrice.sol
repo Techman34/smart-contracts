@@ -30,7 +30,7 @@ contract SanityRatesMaxGasPrice is Withdrawable3, Utils5 {
         emit SanityMaxGasPriceSet(maxGasPriceWei);
     }
 
-    /// @dev You can disable a token by setting the token's sanity rate to MAX_RATE
+    /// @dev You can disable a token by setting the token's sanity rate to 0
     function setSanityRates(IERC20[] memory srcs, uint256[] memory rates) public onlyOperator {
         require(srcs.length == rates.length, "srcs,rates length mismatch");
 
@@ -47,7 +47,9 @@ contract SanityRatesMaxGasPrice is Withdrawable3, Utils5 {
         uint256 rate;
         address token;
         if (src == ETH_TOKEN_ADDRESS) {
-            rate = (PRECISION * PRECISION) / tokenRate[address(dest)];
+            rate = tokenRate[address(dest)] > 0
+                ? (PRECISION * PRECISION) / tokenRate[address(dest)]
+                : 0;
             token = address(dest);
         } else {
             rate = tokenRate[address(src)];

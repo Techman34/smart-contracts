@@ -223,27 +223,25 @@ contract('SanityRatesMaxGasPrice', function (accounts) {
       }
     });
 
-  //   it('should test getting 0 conversion rate when token sanity rate is set to MAX_RATE.', async function () {
-  //     let maxRates = []
-  //     for (let i = 0; i < numTokens; i++) {
-  //       maxRates[i] = MAX_RATE;
-  //     }
+    it('should test getting 0 conversion rate when token sanity rate is set to 0.', async function () {
+      let maxRates = []
+      for (let i = 0; i < numTokens; i++) {
+        maxRates[i] = 0;
+      }
   
-  //     await sanityRates.setSanityRates(tokens, maxRates, {from: operator});
+      await sanityRates.setSanityRates(tokens, maxRates, {from: operator});
 
-  //     const amountWei = new BN(2);
-  //     const currentBlock = await Helper.getCurrentBlock();
+      const amountWei = new BN(2);
+      const currentBlock = await Helper.getCurrentBlock();
 
-  //     let conversionRate;
-  //     for (let i = 0; i < numTokens; i++) {
-  //       conversionRate = await mockReserve.getConversionRate(ethAddress, tokens[i], amountWei, currentBlock);
-  //       console.log(`buy rate: ${conversionRate}`)
-  //       Helper.assertEqual(conversionRate, 0, 'unexpected rate');
+      let conversionRate;
+      for (let i = 0; i < numTokens; i++) {
+        conversionRate = await mockReserve.getConversionRate(ethAddress, tokens[i], amountWei, currentBlock);
+        Helper.assertEqual(conversionRate, 0, 'unexpected rate');
         
-  //       conversionRate = await mockReserve.getConversionRate(tokens[i], ethAddress, amountWei, currentBlock);
-  //       console.log(`sell rate: ${conversionRate}`)
-  //       Helper.assertEqual(conversionRate, 0, 'unexpected rate');
-  //     }
-  //   });
+        conversionRate = await mockReserve.getConversionRate(tokens[i], ethAddress, amountWei, currentBlock);
+        Helper.assertEqual(conversionRate, 0, 'unexpected rate');
+      }
+    });
   });
 });
